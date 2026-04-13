@@ -1,5 +1,7 @@
+import { useCollage } from "@/hooks/collage/useCollage";
 import { useDepartment } from "@/hooks/department/useDepartment";
 import { useLavozim } from "@/hooks/lavozim/useLavozim";
+import { useGetTeacherById } from "@/hooks/teacher/useGetTeacherById";
 import type { UpdateTeacherProfileInput } from "@/hooks/teacher/useUpdateTeacherProfile";
 import { useUpdateTeacherProfile } from "@/hooks/teacher/useUpdateTeacherProfile";
 import { useUser } from "@/hooks/user/useUser";
@@ -14,35 +16,129 @@ export default function TeacherProfile() {
   const userInfo = useUserInfo();
 
   const { data: userData, isLoading: isUserLoading } = useUser();
+
+  // Teacher ma'lumotlarini API dan olish kerak
+  const { data: teacherData } = useGetTeacherById(Number(userInfo?.id));
+
+  // Fallback: agar API dan ma'lumot kelmayotgan bo'lsa, userData dan foydalanamiz
+  const teacher = teacherData?.data || {
+    id: userData?.id,
+    fullName: userData?.fullName || "",
+    phone: userData?.phone || "",
+    email: userData?.email || "",
+    biography: userData?.biography ?? "",
+    input: "",
+    age: userData?.age?.toString() || "",
+    gender: userData?.gender ?? true,
+    orcId: userData?.orcId ?? "",
+    scopusId: userData?.scopusId ?? "",
+    scienceId: userData?.scienceId ?? "",
+    researcherId: userData?.researcherId ?? "",
+    imageUrl: userData?.imageUrl ?? "",
+    fileUrl: "",
+    profession: "",
+    departmentName: userData?.departmentName ?? "",
+    lavozimName: userData?.lavozimName ?? "",
+  };
+
+  console.log("=== TEACHER DATA DEBUG ===");
+  console.log("Teacher data from API:", teacher);
+  console.log("Teacher fields:", {
+    fullName: teacher?.fullName,
+    email: teacher?.email,
+    phone: teacher?.phone,
+    age: teacher?.age,
+    gender: teacher?.gender,
+    biography: teacher?.biography,
+    departmentName: teacher?.departmentName,
+    lavozimName: teacher?.lavozimName,
+    imageUrl: teacher?.imageUrl,
+    fileUrl: teacher?.fileUrl,
+    profession: teacher?.profession,
+    input: teacher?.input,
+    orcId: teacher?.orcId,
+    scopusId: teacher?.scopusId,
+    scienceId: teacher?.scienceId,
+    researcherId: teacher?.researcherId,
+  });
+  console.log("========================");
   const { mutate: updateProfile, isPending } = useUpdateTeacherProfile();
 
-  const handleProfileSubmit = (data: ProfileFormData) => {
-    if (!userInfo?.id) return;
+  const handleProfileSubmit = (formData: ProfileFormData) => {
+    alert("handleProfileSubmit called! Form data: " + JSON.stringify(formData));
+    console.log("handleProfileSubmit called with:", formData);
+    console.log("userInfo:", userInfo);
+    console.log("userData:", userData);
 
-    const updateData: UpdateTeacherProfileInput = {
-      id: Number(userInfo.id),
-      fullName: data.fullName,
-      phoneNumber: data.phone,
-      email: data.email,
-      biography: data.bio,
-      input: data.additionalInfo,
-      age: data.age ? Number(data.age) : 0,
-      orcId: data.orcId,
-      scopusId: data.scopusId,
-      scienceId: data.scienceId,
-      researcherId: data.researcherId,
-      gender: true,
-      profession: data.specialty,
-      lavozmId: Number(data.position) || 0,
-      departmentId: Number(data.department) || 0,
-      image: data.image || undefined,
-      imageUrl: typeof data.image === "string" ? data.image : undefined,
-      file: data.resume || undefined,
-      fileUrl: typeof data.resume === "string" ? data.resume : undefined,
+    // Teacher dan id olamiz
+    if (!teacher?.id) {
+      console.log("No teacher ID found, returning");
+      return;
+    }
+
+    console.log("Creating payload...");
+    const payload: UpdateTeacherProfileInput & {
+      image?: File;
+      file?: File;
+    } = {
+      id: teacher.id,
+      fullName: formData.fullName,
+      email: formData.email,
+      age: formData.age?.trim() ? Number(formData.age) : 0,
+      phoneNumber: formData.phone,
+      departmentId: Number(formData.department),
+      lavozmId: Number(formData.position),
+      gender: teacher?.gender ?? true,
+      biography: formData.bio ?? "",
+      input: formData.additionalInfo ?? "",
+      profession: formData.specialty ?? "",
+      orcId: formData.orcId ?? "",
+      scopusId: formData.scopusId ?? "",
+      scienceId: formData.scienceId ?? "",
+      researcherId: formData.researcherId ?? "",
     };
 
-    console.log("Submitting data:", updateData);
-    updateProfile(updateData);
+    if (formData.image instanceof File) {
+      payload.image = formData.image;
+    } else if (formData.image === null) {
+      payload.imageUrl = "";
+    } else if (typeof formData.image === "string") {
+      payload.imageUrl = formData.image;
+    } else {
+      payload.imageUrl = teacher?.imageUrl ?? "";
+    }
+
+    if (formData.resume instanceof File) {
+      payload.file = formData.resume;
+    } else if (formData.resume === null) {
+      payload.fileUrl = "";
+    } else if (typeof formData.resume === "string") {
+      payload.fileUrl = formData.resume;
+    } else {
+      payload.fileUrl = teacher?.fileUrl ?? "";
+    }
+
+    console.log("Calling updateProfile with payload:", payload);
+    console.log("Payload keys:", Object.keys(payload));
+    console.log("Payload as JSON:", JSON.stringify(payload, null, 2));
+
+    // Network tabda ko'rish uchun
+    console.log(
+      `%c=== API CALL DETAILS ===`,
+      "background: #ff0000; color: white;",
+    );
+    console.log(
+      `%cEndpoint: /teacher/update-profile`,
+      "background: #0000ff; color: white;",
+    );
+    console.log(`%cMethod: PUT`, "background: #0000ff; color: white;");
+    console.log(`%cPayload:`, "background: #0000ff; color: white;", payload);
+    console.log(
+      `%c========================`,
+      "background: #ff0000; color: white;",
+    );
+
+    updateProfile(payload);
   };
 
   const { data: collageResponse, isLoading: isCollageLoading } = useCollage();
@@ -110,37 +206,35 @@ export default function TeacherProfile() {
   }, [departmentResponse]);
 
   const profileValues: ProfileFormData | null = useMemo(() => {
-    if (!userData) return null;
+    if (!teacher) return null;
 
     return {
-      fullName: userData.fullName ?? "",
-      email: userData.email ?? "",
-      phone: userData.phone ?? "",
-      age: userData.age?.toString() ?? "",
-      // Backend'dan nomlar keladi, ularni ID ga o'tkazamiz
+      fullName: teacher.fullName,
+      email: teacher.email,
+      age: teacher.age != null ? String(teacher.age) : "",
+      phone: teacher.phone, // phone field
       faculty:
-        facultiesOptions.find((f) => f.label === userData.facultyName)?.value ??
-        "",
+        facultiesOptions.find((f) => f.label === teacher.departmentName)
+          ?.value ?? "",
       department:
-        departmentsOptions.find((d) => d.label === userData.departmentName)
+        departmentsOptions.find((d) => d.label === teacher.departmentName)
           ?.value ?? "",
       position:
-        positionsOptions.find((l) => l.label === userData.lavozimName)?.value ??
+        positionsOptions.find((l) => l.label === teacher.lavozimName)?.value ??
         "",
-      image: userData.imageUrl ?? null,
-      resume: null, // UserProfile da fileUrl yo'q
-      // ... qolgan fieldlar
-      bio: userData.biography ?? "",
-      additionalInfo: "", // UserProfile da input yo'q
-      specialty: "", // UserProfile da profession yo'q
-      orcId: userData.orcId ?? "",
-      scopusId: userData.scopusId ?? "",
-      scienceId: userData.scienceId ?? "",
-      researcherId: userData.researcherId ?? "",
+      bio: teacher.biography,
+      additionalInfo: teacher.input, // Teacher dan input olinadi
+      specialty: teacher.profession, // Teacher dan profession olinadi
+      orcId: teacher.orcId,
+      scopusId: teacher.scopusId,
+      scienceId: teacher.scienceId,
+      researcherId: teacher.researcherId,
+      image: teacher.imageUrl,
+      resume: teacher.fileUrl, // Teacher dan fileUrl olinadi
     };
-  }, [userData, facultiesOptions, departmentsOptions, positionsOptions]);
+  }, [teacher, departmentsOptions, positionsOptions, facultiesOptions]);
 
-  if (isLoading) return <Skeleton className="h-[500px] w-full rounded-2xl" />;
+  if (isLoading) return <Skeleton className="h-125 w-full rounded-2xl" />;
   if (!profileValues)
     return <div className="p-10 text-center">Ma'lumot topilmadi.</div>;
 

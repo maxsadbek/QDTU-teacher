@@ -1,27 +1,25 @@
-import { DataTable } from "@/components/data-table/data-table";
 import type { ColumnDef } from "@/components/data-table/data-table";
-import { ConfirmPopover } from "@/components/confirm-popover/confirm-popover";
 import { FileInput } from "@/components/file-input/file-input";
 import { Modal } from "@/components/modal/modal";
 import { TableToolbar } from "@/components/table-toolbar/table-toolbar";
+import type { Collage } from "@/features/collage/collage.type";
+import { useCollage } from "@/hooks/collage/useCollage";
+import { useCreateCollage } from "@/hooks/collage/useCreateCollage";
+import { useDeleteCollage } from "@/hooks/collage/useDeleteCollage";
+import { useEditCollage } from "@/hooks/collage/useEditCollage";
 import {
   useModalActions,
   useModalEditData,
   useModalIsOpen,
 } from "@/store/modalStore";
-import { useCreateCollage } from "@/hooks/collage/useCreateCollage";
-import { useCollage } from "@/hooks/collage/useCollage";
-import { useDeleteCollage } from "@/hooks/collage/useDeleteCollage";
-import { useEditCollage } from "@/hooks/collage/useEditCollage";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
+import { Image } from "antd";
 import { Pencil, Trash2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router";
 import { Controller, useForm } from "react-hook-form";
-import type { Collage } from "@/features/collage/collage.type";
-import { Image } from "antd";
+import { useSearchParams } from "react-router";
 
 type FacultyFormValues = {
   name: string;
@@ -137,7 +135,6 @@ export default function Faculties() {
   const { mutate: editCollage, isPending: isEditPending } = useEditCollage();
   const { data: collageResponse, isLoading } = useCollage();
   const { mutate: deleteCollage } = useDeleteCollage();
-  console.log(collageResponse);
 
   const collages = collageResponse?.data ?? [];
   const totalElements = collageResponse?.data?.totalElements ?? 0;
@@ -159,10 +156,17 @@ export default function Faculties() {
     }
   }, [editData, reset]);
 
-  const filtered = useMemo(
-    () => [...collages].sort((a, b) => b.id - a.id),
-    [collages],
-  );
+  const filtered = useMemo(() => {
+    let filteredData = [...collages].sort((a, b) => b.id - a.id);
+
+    if (search.trim()) {
+      filteredData = filteredData.filter((collage) =>
+        collage.name.toLowerCase().includes(search.toLowerCase()),
+      );
+    }
+
+    return filteredData;
+  }, [collages, search]);
 
   const columns = useMemo(
     () =>
@@ -171,7 +175,7 @@ export default function Faculties() {
         (row) => deleteCollage({ id: row.id }),
         page,
       ),
-    [open, page],
+    [open, deleteCollage, page],
   );
 
   const handleClose = () => {

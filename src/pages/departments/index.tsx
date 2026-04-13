@@ -1,28 +1,27 @@
-import { DataTable } from "@/components/data-table/data-table";
-import type { ColumnDef } from "@/components/data-table/data-table";
 import { ConfirmPopover } from "@/components/confirm-popover/confirm-popover";
+import { DataTable } from "@/components/data-table/data-table";
 import { FileInput } from "@/components/file-input/file-input";
 import { Modal } from "@/components/modal/modal";
-import { TableToolbar } from "@/components/table-toolbar/table-toolbar";
 import { SearchableSelect } from "@/components/searchable-select/searchable-select";
+import { TableToolbar } from "@/components/table-toolbar/table-toolbar";
+import { useCollage } from "@/hooks/collage/useCollage";
+import { useCreateDepartment } from "@/hooks/department/useCreateDepartment";
+import { useDeleteDepartment } from "@/hooks/department/useDeleteDeportment";
+import { useDepartment } from "@/hooks/department/useDepartment";
+import { useEditDepartment } from "@/hooks/department/useEditDepartment";
 import {
   useModalActions,
   useModalEditData,
   useModalIsOpen,
 } from "@/store/modalStore";
-import { useCreateDepartment } from "@/hooks/department/useCreateDepartment";
-import { useDeleteDepartment } from "@/hooks/department/useDeleteDeportment";
-import { useEditDepartment } from "@/hooks/department/useEditDepartment";
-import { useDepartment } from "@/hooks/department/useDepartment";
-import { useCollage } from "@/hooks/collage/useCollage";
 import { Button } from "@/ui/button";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
+import { Image } from "antd";
 import { Pencil, Trash2 } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router";
 import { Controller, useForm } from "react-hook-form";
-import { Image } from "antd";
+import { useSearchParams } from "react-router";
 
 type DepartmentFormValues = {
   name: string;
@@ -178,11 +177,18 @@ export default function Departments() {
     }
   }, [editData, reset]);
 
-  // Backend'dan kelgan ma'lumotni sortlash (ixtiyoriy)
-  const sortedData = useMemo(
-    () => [...departments].sort((a, b) => b.id - a.id),
-    [departments],
-  );
+  // Backend'dan kelgan ma'lumotni sortlash va filterlash
+  const sortedData = useMemo(() => {
+    let filteredData = [...departments].sort((a, b) => b.id - a.id);
+
+    if (search.trim()) {
+      filteredData = filteredData.filter((department) =>
+        department.name.toLowerCase().includes(search.toLowerCase()),
+      );
+    }
+
+    return filteredData;
+  }, [departments, search]);
 
   const columns = useMemo(
     () =>
@@ -213,7 +219,7 @@ export default function Departments() {
       );
     } else {
       createDepartment(
-        { ...commonData, image: values.image! },
+        { ...commonData, image: values.image || undefined },
         { onSuccess: handleClose },
       );
     }
