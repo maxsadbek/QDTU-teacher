@@ -1,4 +1,5 @@
-import type { ColumnDef } from "@/components/data-table/data-table";
+import { ConfirmPopover } from "@/components/confirm-popover/confirm-popover";
+import { DataTable, type ColumnDef } from "@/components/data-table/data-table";
 import { FileInput } from "@/components/file-input/file-input";
 import { Modal } from "@/components/modal/modal";
 import { TableToolbar } from "@/components/table-toolbar/table-toolbar";
