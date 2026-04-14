@@ -1,6 +1,7 @@
 import { useCollage } from "@/hooks/collage/useCollage";
 import { useDepartment } from "@/hooks/department/useDepartment";
 import { useLavozim } from "@/hooks/lavozim/useLavozim";
+import { useGetTeacherById } from "@/hooks/teacher/useGetTeacherById";
 import type { UpdateTeacherProfileInput } from "@/hooks/teacher/useUpdateTeacherProfile";
 import { useUpdateTeacherProfile } from "@/hooks/teacher/useUpdateTeacherProfile";
 import { useUser } from "@/hooks/user/useUser";
@@ -13,29 +14,29 @@ import { useMemo } from "react";
 export default function TeacherProfile() {
   const { data: userData } = useUser();
 
-  // Teacher ma'lumotlarini userData dan olish kerak (teacher-dashboard uchun)
-  const teacher = useMemo(
-    () => ({
-      id: userData?.id,
-      fullName: userData?.fullName || "",
-      phone: userData?.phone || "",
-      email: userData?.email || "",
-      biography: userData?.biography ?? "",
-      input: "",
-      age: userData?.age?.toString() || "",
-      gender: userData?.gender ?? true,
-      orcId: userData?.orcId ?? "",
-      scopusId: userData?.scopusId ?? "",
-      scienceId: userData?.scienceId ?? "",
-      researcherId: userData?.researcherId ?? "",
-      imageUrl: userData?.imageUrl ?? "",
-      fileUrl: "",
-      profession: "",
-      departmentName: userData?.departmentName ?? "",
-      lavozimName: userData?.lavozimName ?? "",
-    }),
-    [userData],
-  );
+  // Teacher ma'lumotlarini API dan olish kerak (teacher-dashboard uchun)
+  const { data: teacherData } = useGetTeacherById(Number(userData?.id));
+
+  // Teacher ma'lumotlari
+  const teacher = teacherData?.data || {
+    id: userData?.id,
+    fullName: userData?.fullName || "",
+    phone: userData?.phone || "",
+    email: userData?.email || "",
+    biography: userData?.biography ?? "",
+    input: "",
+    age: userData?.age?.toString() || "",
+    gender: userData?.gender ?? true,
+    orcId: userData?.orcId ?? "",
+    scopusId: userData?.scopusId ?? "",
+    scienceId: userData?.scienceId ?? "",
+    researcherId: userData?.researcherId ?? "",
+    imageUrl: userData?.imageUrl ?? "",
+    fileUrl: "",
+    profession: "",
+    departmentName: userData?.departmentName ?? "",
+    lavozimName: userData?.lavozimName ?? "",
+  };
 
   console.log("=== TEACHER DATA DEBUG ===");
   console.log("Teacher data from API:", teacher);
