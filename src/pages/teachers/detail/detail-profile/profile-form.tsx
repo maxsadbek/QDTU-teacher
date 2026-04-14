@@ -9,6 +9,7 @@ import { cn } from "@/utils";
 import { Fingerprint, Paperclip, Save, User } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import type { ProfileFormData } from "./profile-edit";
+import { FileInput } from "@/components/file-input/file-input";
 
 type ProfileFormProps = {
   defaultValues: ProfileFormData;
