@@ -131,6 +131,7 @@ export function useUpdateTeacherProfile() {
       // Cache invalidation
       queryClient.invalidateQueries({ queryKey: ["teachers"] });
       queryClient.invalidateQueries({ queryKey: ["user-me"] }); // User data ni ham invalidate qilish
+      queryClient.invalidateQueries({ queryKey: ["user"] }); // useUser hook ni ham invalidate qilish
 
       if (variables?.id != null) {
         queryClient.invalidateQueries({

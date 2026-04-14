@@ -1,45 +1,41 @@
 import { useCollage } from "@/hooks/collage/useCollage";
 import { useDepartment } from "@/hooks/department/useDepartment";
 import { useLavozim } from "@/hooks/lavozim/useLavozim";
-import { useGetTeacherById } from "@/hooks/teacher/useGetTeacherById";
 import type { UpdateTeacherProfileInput } from "@/hooks/teacher/useUpdateTeacherProfile";
 import { useUpdateTeacherProfile } from "@/hooks/teacher/useUpdateTeacherProfile";
 import { useUser } from "@/hooks/user/useUser";
 import type { ProfileFormData } from "@/pages/teachers/detail/detail-profile/profile-edit";
 import { ProfileForm } from "@/pages/teachers/detail/detail-profile/profile-form";
 import { ProfileSidebar } from "@/pages/teachers/detail/detail-profile/profile-sidebar";
-import { useUserInfo } from "@/store/userStore";
 import { Skeleton } from "@/ui/skeleton";
 import { useMemo } from "react";
 
 export default function TeacherProfile() {
-  const userInfo = useUserInfo();
+  const { data: userData } = useUser();
 
-  const { data: userData, isLoading: isUserLoading } = useUser();
-
-  // Teacher ma'lumotlarini API dan olish kerak
-  const { data: teacherData } = useGetTeacherById(Number(userInfo?.id));
-
-  // Fallback: agar API dan ma'lumot kelmayotgan bo'lsa, userData dan foydalanamiz
-  const teacher = teacherData?.data || {
-    id: userData?.id,
-    fullName: userData?.fullName || "",
-    phone: userData?.phone || "",
-    email: userData?.email || "",
-    biography: userData?.biography ?? "",
-    input: "",
-    age: userData?.age?.toString() || "",
-    gender: userData?.gender ?? true,
-    orcId: userData?.orcId ?? "",
-    scopusId: userData?.scopusId ?? "",
-    scienceId: userData?.scienceId ?? "",
-    researcherId: userData?.researcherId ?? "",
-    imageUrl: userData?.imageUrl ?? "",
-    fileUrl: "",
-    profession: "",
-    departmentName: userData?.departmentName ?? "",
-    lavozimName: userData?.lavozimName ?? "",
-  };
+  // Teacher ma'lumotlarini userData dan olish kerak (teacher-dashboard uchun)
+  const teacher = useMemo(
+    () => ({
+      id: userData?.id,
+      fullName: userData?.fullName || "",
+      phone: userData?.phone || "",
+      email: userData?.email || "",
+      biography: userData?.biography ?? "",
+      input: "",
+      age: userData?.age?.toString() || "",
+      gender: userData?.gender ?? true,
+      orcId: userData?.orcId ?? "",
+      scopusId: userData?.scopusId ?? "",
+      scienceId: userData?.scienceId ?? "",
+      researcherId: userData?.researcherId ?? "",
+      imageUrl: userData?.imageUrl ?? "",
+      fileUrl: "",
+      profession: "",
+      departmentName: userData?.departmentName ?? "",
+      lavozimName: userData?.lavozimName ?? "",
+    }),
+    [userData],
+  );
 
   console.log("=== TEACHER DATA DEBUG ===");
   console.log("Teacher data from API:", teacher);
@@ -65,10 +61,7 @@ export default function TeacherProfile() {
   const { mutate: updateProfile, isPending } = useUpdateTeacherProfile();
 
   const handleProfileSubmit = (formData: ProfileFormData) => {
-    alert("handleProfileSubmit called! Form data: " + JSON.stringify(formData));
     console.log("handleProfileSubmit called with:", formData);
-    console.log("userInfo:", userInfo);
-    console.log("userData:", userData);
 
     // Teacher dan id olamiz
     if (!teacher?.id) {
@@ -138,19 +131,14 @@ export default function TeacherProfile() {
       "background: #ff0000; color: white;",
     );
 
-    alert(
-      "About to call updateProfile with payload: " +
-        JSON.stringify(payload, null, 2),
-    );
     updateProfile(payload);
-    alert("updateProfile called!");
   };
 
   const { data: collageResponse } = useCollage();
   const { data: departmentResponse } = useDepartment();
   const { data: lavozimResponse } = useLavozim();
 
-  const isLoading = isUserLoading;
+  const isLoading = false;
 
   const positionsOptions = useMemo(
     () =>
